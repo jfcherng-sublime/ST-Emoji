@@ -27,17 +27,24 @@ class Emoji:
     status: EmojiStatus
     version: str
 
-    re_line = re.compile(
+    _re_line = re.compile(
         # 2764 FE0F 200D 1F525 ; fully-qualified # ❤️‍🔥 E13.1 heart on fire
-        r"^(?P<codes>[^;]+);\s+(?P<status>[^\s]+)\s+#\s+(?P<chars>[^\s]+)\s+E(?P<version>[^\s]+)\s+(?P<description>.*)$"
+        r"^(?P<codes>[^;]+);\s+"
+        + r"(?P<status>[^\s]+)\s+"
+        + r"#\s+(?P<chars>[^\s]+)\s+"
+        + r"E(?P<version>[^\s]+)\s+"
+        + r"(?P<description>.*)$"
     )
+
+    def __hash__(self) -> int:
+        return hash(self.codes)
 
     def __str__(self) -> str:
         return f"{''.join(self.chars)} {self.description} ({', '.join(self.codes)})"
 
     @classmethod
     def from_line(cls, line: str) -> Optional[Emoji]:
-        if not (m := cls.re_line.match(line)):
+        if not (m := cls._re_line.match(line)):
             return None
         return cls(
             chars=tuple(m.group("chars")),
@@ -54,13 +61,26 @@ def get_emojis() -> Tuple[Emoji, ...]:
     return tuple(filter(None, map(Emoji.from_line, data.splitlines(keepends=False))))
 
 
+@lru_cache
+def convert_emojis_to_quick_panel_items(emojis: Tuple[Emoji, ...]) -> Tuple[sublime.QuickPanelItem, ...]:
+    return tuple(
+        sublime.QuickPanelItem(
+            trigger="".join(emoji.chars) + " " + emoji.description,
+            details="",
+            annotation=", ".join(emoji.codes),
+            kind=(sublime.KIND_ID_AMBIGUOUS, str(len(emoji.chars)), ""),
+        )
+        for emoji in emojis
+    )
+
+
 class SelectEmojiCommand(sublime_plugin.TextCommand):
     def run(self, edit: sublime.Edit) -> None:
         if not (window := self.view.window()):
             return
 
         emojis = get_emojis()
-        items = tuple(map(str, emojis))
+        items = convert_emojis_to_quick_panel_items(emojis)
 
         def callback(selected: int) -> None:
             if selected >= 0:
