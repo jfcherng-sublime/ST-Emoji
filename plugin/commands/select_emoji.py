@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-# __future__ must be the first import
+import re
+
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from typing import Optional, Tuple
-import re
+
 import sublime
 import sublime_plugin
 
