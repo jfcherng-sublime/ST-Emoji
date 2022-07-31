@@ -30,11 +30,14 @@ class Emoji:
 
     _re_line = re.compile(
         # 2764 FE0F 200D 1F525 ; fully-qualified # ❤️‍🔥 E13.1 heart on fire
-        r"^(?P<codes>[^;]+);\s+"
+        r"^(?!#)"  # early fail on comments
+        + r"(?P<codes>[^;]+);\s+"
         + r"(?P<status>[^\s]+)\s+"
-        + r"#\s+(?P<chars>[^\s]+)\s+"
+        + r"#\s*"
+        + r"(?P<chars>[^\s]+)\s+"
         + r"E(?P<version>[^\s]+)\s+"
-        + r"(?P<description>.*)$"
+        + r"(?P<description>.*)"
+        + r"$"
     )
 
     def __hash__(self) -> int:
@@ -45,7 +48,7 @@ class Emoji:
 
     @classmethod
     def from_line(cls, line: str) -> Optional[Emoji]:
-        if not (m := cls._re_line.match(line)):
+        if not (m := cls._re_line.fullmatch(line)):
             return None
         return cls(
             chars=tuple(m.group("chars")),
