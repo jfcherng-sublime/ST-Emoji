@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import Iterable, Iterator, Optional, Tuple
 
 import sublime
 import sublime_plugin
@@ -58,23 +58,38 @@ class Emoji:
         )
 
 
-@lru_cache
-def get_emojis() -> Tuple[Emoji, ...]:
-    data = sublime.load_resource(f"Packages/{PACKAGE_NAME}/data/emoji-test.txt").strip()
-    return tuple(filter(None, map(Emoji.from_line, data.splitlines(keepends=False))))
+class EmojiCollection:
+    def __init__(self, emojis: Optional[Iterable[Emoji]] = None) -> None:
+        self._emojis = list(emojis or [])
 
+    def __iter__(self) -> Iterator[Emoji]:
+        return iter(self._emojis)
 
-@lru_cache
-def convert_emojis_to_quick_panel_items(emojis: Tuple[Emoji, ...]) -> Tuple[sublime.QuickPanelItem, ...]:
-    return tuple(
-        sublime.QuickPanelItem(
-            trigger="".join(emoji.chars) + " " + emoji.description,
-            details="",
-            annotation=", ".join(emoji.codes),
-            kind=(sublime.KIND_ID_AMBIGUOUS, str(len(emoji.chars)), ""),
+    def __len__(self) -> int:
+        return len(self._emojis)
+
+    def __getitem__(self, index: int) -> Emoji:
+        return self._emojis[index]
+
+    @classmethod
+    def from_lines(cls, lines: Iterable[str]) -> EmojiCollection:
+        return cls(filter(None, map(Emoji.from_line, lines)))
+
+    @classmethod
+    @lru_cache
+    def from_resource(cls, resource_path: str) -> EmojiCollection:
+        return cls.from_lines(sublime.load_resource(resource_path).splitlines())
+
+    def to_quick_panel_items(self) -> Tuple[sublime.QuickPanelItem, ...]:
+        return tuple(
+            sublime.QuickPanelItem(
+                trigger="".join(emoji.chars) + " " + emoji.description,
+                details="",
+                annotation=", ".join(emoji.codes),
+                kind=(sublime.KIND_ID_AMBIGUOUS, str(len(emoji.chars)), ""),
+            )
+            for emoji in self
         )
-        for emoji in emojis
-    )
 
 
 class SelectEmojiCommand(sublime_plugin.TextCommand):
@@ -82,11 +97,9 @@ class SelectEmojiCommand(sublime_plugin.TextCommand):
         if not (window := self.view.window()):
             return
 
-        emojis = get_emojis()
-        items = convert_emojis_to_quick_panel_items(emojis)
-
         def callback(selected: int) -> None:
             if selected >= 0:
                 self.view.run_command("insert", {"characters": "".join(emojis[selected].chars)})
 
-        window.show_quick_panel(items, callback)
+        emojis = EmojiCollection.from_resource(f"Packages/{PACKAGE_NAME}/data/emoji-test.txt")
+        window.show_quick_panel(emojis.to_quick_panel_items(), callback)
