@@ -10,57 +10,65 @@ import sublime
 import sublime_plugin
 
 PACKAGE_NAME = __package__.partition(".")[0]
+DB_FILE = f"Packages/{PACKAGE_NAME}/data/emoji-test.txt"
 
 
 class EmojiStatus(Enum):
     COMPONENT = "component"
-    FULLY = "fully-qualified"
-    MINIMALLY = "minimally-qualified"
-    UN = "unqualified"
+    FULLY_QUALIFIED = "fully-qualified"
+    MINIMALLY_QUALIFIED = "minimally-qualified"
+    UNQUALIFIED = "unqualified"
 
 
 @dataclass
 class Emoji:
     chars: Tuple[str, ...]
     codes: Tuple[str, ...]
-    description: str
     status: EmojiStatus
-    version: str
+    description: str = ""
+    version: str = ""
 
     _re_line = re.compile(
         # 2764 FE0F 200D 1F525 ; fully-qualified # ❤️‍🔥 E13.1 heart on fire
         r"^(?!#)"  # early fail on comments
-        + r"(?P<codes>[^;]+);\s+"
-        + r"(?P<status>[^\s]+)\s+"
-        + r"#\s*"
-        + r"(?P<chars>[^\s]+)\s+"
+        + r"(?P<codes>[^;]+)"
+        + r";\s+(?P<status>[^\s]+)\s+"
+        + r"#\s*(?P<chars>[^\s]+)\s+"
         + r"E(?P<version>[^\s]+)\s+"
-        + r"(?P<description>.*)"
-        + r"$"
+        + r"(?P<description>.*)$"
     )
 
     def __hash__(self) -> int:
         return hash(self.codes)
 
     def __str__(self) -> str:
-        return f"{''.join(self.chars)} {self.description} ({', '.join(self.codes)})"
+        return (
+            " ".join(self.codes)
+            + f" ; {self.status.value}"
+            + f" # {''.join(self.chars)}"
+            + f" E{self.version}"
+            + f" {self.description}"
+        )
 
     @classmethod
     def from_line(cls, line: str) -> Optional[Emoji]:
-        if not (m := cls._re_line.fullmatch(line)):
-            return None
-        return cls(
-            chars=tuple(m.group("chars")),
-            codes=tuple(m.group("codes").strip().split(" ")),
-            description=m.group("description").strip().title(),
-            status=EmojiStatus(m.group("status")),
-            version=m.group("version"),
-        )
+        if m := cls._re_line.fullmatch(line):
+            return cls(
+                chars=tuple(m.group("chars")),
+                codes=tuple(m.group("codes").strip().split(" ")),
+                description=m.group("description").strip().title(),
+                status=EmojiStatus(m.group("status")),
+                version=m.group("version"),
+            )
+        return None
 
 
 class EmojiCollection:
     def __init__(self, emojis: Optional[Iterable[Emoji]] = None) -> None:
         self._emojis = list(emojis or [])
+
+    def __str__(self) -> str:
+        return "\n".join(map(str, self))
 
     def __iter__(self) -> Iterator[Emoji]:
         return iter(self._emojis)
@@ -85,7 +93,7 @@ class EmojiCollection:
             sublime.QuickPanelItem(
                 trigger="".join(emoji.chars) + " " + emoji.description,
                 details="",
-                annotation=", ".join(emoji.codes),
+                annotation=", ".join(emoji.codes) + f" - E{emoji.version}",
                 kind=(sublime.KIND_ID_AMBIGUOUS, str(len(emoji.chars)), ""),
             )
             for emoji in self
@@ -101,5 +109,5 @@ class SelectEmojiCommand(sublime_plugin.TextCommand):
             if selected >= 0:
                 self.view.run_command("insert", {"characters": "".join(emojis[selected].chars)})
 
-        emojis = EmojiCollection.from_resource(f"Packages/{PACKAGE_NAME}/data/emoji-test.txt")
+        emojis = EmojiCollection.from_resource(DB_FILE)
         window.show_quick_panel(emojis.to_quick_panel_items(), callback)
