@@ -1,13 +1,4 @@
-# import all listeners and commands
-from .commands.select_emoji import SelectEmojiCommand
-
-__all__ = (
-    # ST: core
-    "plugin_loaded",
-    "plugin_unloaded",
-    # ST: commands
-    "SelectEmojiCommand",
-)
+from .commands import *  # noqa: F401, F403
 
 
 def plugin_loaded() -> None:
