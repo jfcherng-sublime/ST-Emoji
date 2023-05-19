@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
-from typing import Iterable, Iterator, Optional, Tuple
+from typing import Iterable, Iterator
 
 import sublime
 
@@ -25,8 +25,8 @@ class EmojiStatus(Enum):
 
 @dataclass
 class Emoji:
-    chars: Tuple[str, ...]
-    codes: Tuple[str, ...]
+    chars: tuple[str, ...]
+    codes: tuple[str, ...]
     status: EmojiStatus
     description: str = ""
     version: str = ""
@@ -54,7 +54,7 @@ class Emoji:
         )
 
     @classmethod
-    def from_line(cls, line: str) -> Optional[Emoji]:
+    def from_line(cls, line: str) -> Emoji | None:
         if m := cls._re_line.fullmatch(line):
             return cls(
                 chars=tuple(m.group("chars")),
@@ -67,7 +67,7 @@ class Emoji:
 
 
 class EmojiCollection:
-    def __init__(self, emojis: Optional[Iterable[Emoji]] = None) -> None:
+    def __init__(self, emojis: Iterable[Emoji] | None = None) -> None:
         self._emojis = list(emojis or [])
 
     def __str__(self) -> str:
@@ -90,7 +90,7 @@ class EmojiCollection:
     def from_resource(cls, resource_path: str) -> EmojiCollection:
         return cls.from_lines(sublime.load_resource(resource_path).splitlines())
 
-    def to_quick_panel_items(self) -> Tuple[sublime.QuickPanelItem, ...]:
+    def to_quick_panel_items(self) -> tuple[sublime.QuickPanelItem, ...]:
         return tuple(
             sublime.QuickPanelItem(
                 trigger="".join(emoji.chars) + " " + emoji.description,
