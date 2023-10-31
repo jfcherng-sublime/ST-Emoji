@@ -1,9 +1,25 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 import sublime
 import sublime_plugin
 
-from ..emoji import get_emoji_collection
+from ..constants import DB_GENERATOR_REVISION
+from ..emoji import EmojiDatabase, get_emoji_db
+
+
+@lru_cache
+def emoji_db_to_quick_panel_items(db: EmojiDatabase) -> tuple[sublime.QuickPanelItem, ...]:
+    return tuple(
+        sublime.QuickPanelItem(
+            trigger=f"{emoji.char} {emoji.description}",
+            details="",
+            annotation=f"{', '.join(emoji.codes)} ({emoji.status}, v{emoji.version})",
+            kind=(sublime.KIND_ID_AMBIGUOUS, str(len(emoji)), ""),
+        )
+        for emoji in db
+    )
 
 
 class SelectEmojiCommand(sublime_plugin.TextCommand):
@@ -13,7 +29,7 @@ class SelectEmojiCommand(sublime_plugin.TextCommand):
 
         def callback(selected: int) -> None:
             if selected >= 0:
-                self.view.run_command("insert", {"characters": "".join(emojis[selected].chars)})
+                self.view.run_command("insert", {"characters": db[selected].char})
 
-        emojis = get_emoji_collection()
-        window.show_quick_panel(emojis.to_quick_panel_items(), callback)
+        db = get_emoji_db(DB_GENERATOR_REVISION)
+        window.show_quick_panel(emoji_db_to_quick_panel_items(db), callback)

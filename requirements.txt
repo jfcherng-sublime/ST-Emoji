@@ -1,6 +1,18 @@
 # This is an implicit value, here for clarity
 --index https://pypi.python.org/simple/
 
+requests
+
+# ----- #
+# stubs #
+# ----- #
+
+types-requests
+
+# ------------ #
+# coding style #
+# ------------ #
+
 autoflake
 black
 flake8
