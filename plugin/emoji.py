@@ -11,13 +11,13 @@ from typing import Any
 import sublime
 
 from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_GENERATOR_REVISION
-from .utils import pp
+from .utils import pp_error, pp_info, pp_warning
 
 
 @lru_cache
 def get_emoji_db(generator_revision: int) -> EmojiDatabase:
     def _create_db_cache() -> EmojiDatabase:
-        pp("INFO", f"Create database cache: {DB_FILE_CACHED}")
+        pp_info(f"Create database cache: {DB_FILE_CACHED}")
         db_content = sublime.load_resource(DB_FILE_IN_PACKAGE)
         db = EmojiDatabase.from_content(db_content)
         DB_FILE_CACHED.parent.mkdir(parents=True, exist_ok=True)
@@ -29,11 +29,11 @@ def get_emoji_db(generator_revision: int) -> EmojiDatabase:
             db_dict: dict[str, Any] = json.loads(DB_FILE_CACHED.read_bytes())
             db = EmojiDatabase.from_dict(db_dict)
             if db.generator_revision == generator_revision:
-                pp("INFO", f"Load database cache: {DB_FILE_CACHED}")
+                pp_info(f"Load database cache: {DB_FILE_CACHED}")
                 return db
-            pp("WARNING", "Mismatched database cache revision...")
+            pp_warning("Mismatched database cache revision...")
         except Exception as e:
-            pp("ERROR", f"Failed to load database cache: {e}")
+            pp_error(f"Failed to load database cache: {e}")
         return None
 
     return _load_db_cache() or _create_db_cache()
@@ -141,7 +141,12 @@ class EmojiDatabase:
         return len(self.emojis)
 
     def __str__(self) -> str:
-        return self.to_json()
+        """Returns a string like "emoji-test.txt"."""
+        return f"""
+# Date: {self.date}
+# Version: {self.version}
+# Generator Version: {self.generator_revision}
+""" + "\n".join(map(str, self.emojis)) + "\n#EOF\n"
 
     @classmethod
     def from_content(cls, content: str) -> EmojiDatabase:
