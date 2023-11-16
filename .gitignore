@@ -5,9 +5,12 @@ Thumbs.db
 
 # Python
 *.py[cod]
-.mypy_cache/
+*_cache/
+.venv-*/
 .venv/
 __pycache__/
+venv-*/
+venv/
 
 # git worktrees
 br-*/
