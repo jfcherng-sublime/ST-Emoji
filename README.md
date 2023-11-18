@@ -18,3 +18,4 @@ To install this plugin via Package Control, you have to add a custom repository.
 ## Usage
 
 Run `Emoji: Insert Emoji` in the command palette and select the emoji to insert at the cursor(s).
+Or bind `select_emoji` command to whatever key sequence you like.
