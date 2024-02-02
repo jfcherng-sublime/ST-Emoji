@@ -142,11 +142,14 @@ class EmojiDatabase:
 
     def __str__(self) -> str:
         """Returns a string like "emoji-test.txt"."""
+        data = "\n".join(map(str, self.emojis))
         return f"""
 # Date: {self.date}
 # Version: {self.version}
 # Generator Version: {self.generator_revision}
-""" + "\n".join(map(str, self.emojis)) + "\n#EOF\n"
+{data}
+# EOF
+"""
 
     @classmethod
     def from_content(cls, content: str) -> EmojiDatabase:
