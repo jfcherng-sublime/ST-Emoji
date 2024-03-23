@@ -1,34 +1,34 @@
 from __future__ import annotations
 
-import json
+import pickle
 import re
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
-from enum import Enum
 from functools import lru_cache
 from typing import Any
 
 import sublime
 
-from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_GENERATOR_REVISION
+from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_REVISION
+from .data_types import StrEnum
 from .utils import pp_error, pp_info, pp_warning
 
 
 @lru_cache
-def get_emoji_db(generator_revision: int) -> EmojiDatabase:
-    def _create_db_cache() -> EmojiDatabase:
+def get_emoji_db(db_revision: int) -> EmojiDatabase:
+    def _create_cache() -> EmojiDatabase:
         pp_info(f"Create database cache: {DB_FILE_CACHED}")
         db_content = sublime.load_resource(DB_FILE_IN_PACKAGE)
         db = EmojiDatabase.from_content(db_content)
         DB_FILE_CACHED.parent.mkdir(parents=True, exist_ok=True)
-        DB_FILE_CACHED.write_text(db.to_json(), encoding="utf-8")
+        DB_FILE_CACHED.write_bytes(db.to_pickle())
         return db
 
-    def _load_db_cache() -> EmojiDatabase | None:
+    def _load_cache() -> EmojiDatabase | None:
         try:
-            db_dict: dict[str, Any] = json.loads(DB_FILE_CACHED.read_bytes())
+            db_dict: dict[str, Any] = pickle.loads(DB_FILE_CACHED.read_bytes())
             db = EmojiDatabase.from_dict(db_dict)
-            if db.generator_revision == generator_revision:
+            if db.db_revision == db_revision:
                 pp_info(f"Load database cache: {DB_FILE_CACHED}")
                 return db
             pp_warning("Mismatched database cache revision...")
@@ -36,10 +36,10 @@ def get_emoji_db(generator_revision: int) -> EmojiDatabase:
             pp_error(f"Failed to load database cache: {e}")
         return None
 
-    return _load_db_cache() or _create_db_cache()
+    return _load_cache() or _create_cache()
 
 
-class EmojiStatus(str, Enum):
+class EmojiStatus(StrEnum):
     COMPONENT = "component"
     FULLY_QUALIFIED = "fully-qualified"
     MINIMALLY_QUALIFIED = "minimally-qualified"
@@ -118,21 +118,21 @@ class Emoji:
 
 @dataclass
 class EmojiDatabase:
+    db_revision: int = 0
     date: str = ""
     version: str = ""
-    emojis: list = field(default_factory=list)
-    generator_revision: int = 0
+    emojis: list[Emoji] = field(default_factory=list)
 
-    _re_version = re.compile(r"^#\s*Version:\s*(?P<version>.*)$")
+    _RE_VERSION = re.compile(r"^#\s*Version:\s*(?P<version>.*)$")
     """Matches `# Version: 15.1`."""
-    _re_date = re.compile(r"^#\s*Date:\s*(?P<date>.*)$")
+    _RE_DATE = re.compile(r"^#\s*Date:\s*(?P<date>.*)$")
     """Matches `# Date: 2023-06-05, 21:39:54 GMT`."""
 
     def __getitem__(self, index: int) -> Emoji:
         return self.emojis[index]
 
     def __hash__(self) -> int:
-        return hash((self.date, self.version, self.generator_revision))
+        return hash((self.db_revision, self.date, self.version))
 
     def __iter__(self) -> Iterator[Emoji]:
         return iter(self.emojis)
@@ -144,9 +144,9 @@ class EmojiDatabase:
         """Returns a string like "emoji-test.txt"."""
         data = "\n".join(map(str, self.emojis))
         return f"""
+# DB Revision: {self.db_revision}
 # Date: {self.date}
 # Version: {self.version}
-# Generator Version: {self.generator_revision}
 {data}
 # EOF
 """
@@ -158,34 +158,29 @@ class EmojiDatabase:
     @classmethod
     def from_dict(cls, db: dict[str, Any]) -> EmojiDatabase:
         return cls(
+            db_revision=db.get("db_revision", DB_REVISION),
             date=db.get("date", ""),
             version=db.get("version", ""),
             emojis=list(map(Emoji.from_dict, db.get("emojis", []))),
-            generator_revision=db.get("generator_revision", 0),
         )
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> EmojiDatabase:
-        collection = cls()
+        collection = cls(db_revision=DB_REVISION)
         for line in lines:
-            if e := Emoji.from_line(line):
-                collection.emojis.append(e)
+            if emoji := Emoji.from_line(line):
+                collection.emojis.append(emoji)
                 continue
-            if m := cls._re_version.fullmatch(line):
+            if m := cls._RE_VERSION.fullmatch(line):
                 collection.version = m.group("version").strip()
                 continue
-            if m := cls._re_date.fullmatch(line):
+            if m := cls._RE_DATE.fullmatch(line):
                 collection.date = m.group("date").strip()
                 continue
         return collection
 
-    def to_json(self, *, pretty: bool = False) -> str:
-        if pretty:
-            kwargs: dict[str, Any] = {"indent": "\t"}
-        else:
-            kwargs = {"separators": (",", ":")}
-        return json.dumps(
-            dict(asdict(self), generator_revision=DB_GENERATOR_REVISION),
-            ensure_ascii=False,
-            **kwargs,
-        )
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    def to_pickle(self) -> bytes:
+        return pickle.dumps(self.to_dict(), protocol=pickle.HIGHEST_PROTOCOL)
