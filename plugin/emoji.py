@@ -8,6 +8,7 @@ from functools import lru_cache
 from typing import Any
 
 import sublime
+from typing_extensions import Self
 
 from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_REVISION
 from .data_types import StrEnum
@@ -85,7 +86,7 @@ class Emoji:
         )
 
     @classmethod
-    def from_dict(cls, db: dict[str, Any]) -> Emoji:
+    def from_dict(cls, db: dict[str, Any]) -> Self:
         return cls(
             char=db["char"],  # required
             codes=db.get("codes") or cls.str_to_code_points(db["char"]),
@@ -95,7 +96,7 @@ class Emoji:
         )
 
     @classmethod
-    def from_line(cls, line: str) -> Emoji | None:
+    def from_line(cls, line: str) -> Self | None:
         if m := cls._re_line.fullmatch(line):
             return cls(
                 char=m.group("char").strip(),
@@ -152,11 +153,11 @@ class EmojiDatabase:
 """
 
     @classmethod
-    def from_content(cls, content: str) -> EmojiDatabase:
+    def from_content(cls, content: str) -> Self:
         return cls.from_lines(content.splitlines())
 
     @classmethod
-    def from_dict(cls, db: dict[str, Any]) -> EmojiDatabase:
+    def from_dict(cls, db: dict[str, Any]) -> Self:
         return cls(
             db_revision=db.get("db_revision", DB_REVISION),
             date=db.get("date", ""),
@@ -165,7 +166,7 @@ class EmojiDatabase:
         )
 
     @classmethod
-    def from_lines(cls, lines: Iterable[str]) -> EmojiDatabase:
+    def from_lines(cls, lines: Iterable[str]) -> Self:
         collection = cls(db_revision=DB_REVISION)
         for line in lines:
             if emoji := Emoji.from_line(line):
