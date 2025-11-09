@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 
 import sublime
 import sublime_plugin
@@ -9,7 +9,7 @@ from ..constants import DB_REVISION
 from ..emoji import EmojiDatabase, get_emoji_db
 
 
-@lru_cache
+@cache
 def emoji_db_to_quick_panel_items(db: EmojiDatabase) -> tuple[sublime.QuickPanelItem, ...]:
     return tuple(
         sublime.QuickPanelItem(
