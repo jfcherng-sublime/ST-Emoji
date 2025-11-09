@@ -3,15 +3,15 @@ name = "Emoji"
 version = "0.0.0"
 description = "Insert emoji from the command palette."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 dependencies = [
   "typing-extensions>=4.11",
 ]
 
 [dependency-groups]
 dev = [
-  "mypy>=1.14",
-  "ruff>=0.13",
+  "mypy>=1.18",
+  "ruff>=0.14",
 ]
 
 [tool.uv]
@@ -45,13 +45,13 @@ ignore = [
   '**/libs',
 ]
 stubPath = 'typings'
-pythonVersion = '3.8'
+pythonVersion = '3.13'
 
 
 [tool.ruff]
 preview = true
 line-length = 120
-target-version = 'py38'
+target-version = 'py313'
 exclude = [
   "*/libs/*",
   ".git",
