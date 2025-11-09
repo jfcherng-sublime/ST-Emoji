@@ -4,14 +4,13 @@ import pickle
 import re
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
+from enum import StrEnum
 from functools import lru_cache
-from typing import Any
+from typing import Any, Self
 
 import sublime
-from typing_extensions import Self
 
 from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_REVISION
-from .data_types import StrEnum
 from .utils import pp_error, pp_info, pp_warning
 
 
