@@ -5,37 +5,45 @@ import re
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
-from functools import lru_cache
+from functools import cache
+from pathlib import Path
 from typing import Any, Self
 
 import sublime
 
-from .constants import DB_FILE_CACHED, DB_FILE_IN_PACKAGE, DB_REVISION
-from .utils import pp_error, pp_info, pp_warning
+from .constants import DB_CACHE_DIR, DB_FILE_IN_PACKAGE, DB_FILE_MD5_IN_PACKAGE, DB_GENERATOR_HASH
+from .utils import pp_error, pp_info
 
 
-@lru_cache
-def get_emoji_db(db_revision: int) -> EmojiDatabase:
+@cache
+def get_emoji_db() -> EmojiDatabase:
+    def _get_db_hash() -> str:
+        try:
+            pp_info(f"Loading database cache hash file: {DB_FILE_MD5_IN_PACKAGE}")
+            db_md5 = sublime.load_resource(DB_FILE_MD5_IN_PACKAGE).strip()
+            return f"{db_md5}@{DB_GENERATOR_HASH}"
+        except Exception as e:
+            pp_error(f"Failed to load database hash file: {e}")
+            raise
+
     def _create_cache() -> EmojiDatabase:
-        pp_info(f"Create database cache: {DB_FILE_CACHED}")
+        pp_info(f"Creating database cache: {cached_db_file}")
         db_content = sublime.load_resource(DB_FILE_IN_PACKAGE)
-        db = EmojiDatabase.from_content(db_content)
-        DB_FILE_CACHED.parent.mkdir(parents=True, exist_ok=True)
-        DB_FILE_CACHED.write_bytes(db.to_pickle())
+        db = EmojiDatabase.from_string(db_content)
+        db.db_hash = db_hash
+        db.to_pickle_file(cached_db_file)
         return db
 
     def _load_cache() -> EmojiDatabase | None:
         try:
-            db_dict: dict[str, Any] = pickle.loads(DB_FILE_CACHED.read_bytes())
-            db = EmojiDatabase.from_dict(db_dict)
-            if db.db_revision == db_revision:
-                pp_info(f"Load database cache: {DB_FILE_CACHED}")
-                return db
-            pp_warning("Mismatched database cache revision...")
+            pp_info(f"Loading database cache file: {cached_db_file}")
+            return EmojiDatabase.from_pickle_file(cached_db_file)
         except Exception as e:
-            pp_error(f"Failed to load database cache: {e}")
+            pp_error(f"Failed to load database cache file: {e}")
         return None
 
+    db_hash = _get_db_hash()
+    cached_db_file = DB_CACHE_DIR / f"{db_hash}.bin"
     return _load_cache() or _create_cache()
 
 
@@ -118,7 +126,8 @@ class Emoji:
 
 @dataclass
 class EmojiDatabase:
-    db_revision: int = 0
+    db_hash: str = ""
+
     date: str = ""
     version: str = ""
     emojis: list[Emoji] = field(default_factory=list)
@@ -132,7 +141,7 @@ class EmojiDatabase:
         return self.emojis[index]
 
     def __hash__(self) -> int:
-        return hash((self.db_revision, self.date, self.version))
+        return hash((self.db_hash, self.date, self.version))
 
     def __iter__(self) -> Iterator[Emoji]:
         return iter(self.emojis)
@@ -144,7 +153,7 @@ class EmojiDatabase:
         """Returns a string like "emoji-test.txt"."""
         data = "\n".join(map(str, self.emojis))
         return f"""
-# DB Revision: {self.db_revision}
+# DB Revision: {self.db_hash}
 # Date: {self.date}
 # Version: {self.version}
 {data}
@@ -152,13 +161,8 @@ class EmojiDatabase:
 """
 
     @classmethod
-    def from_content(cls, content: str) -> Self:
-        return cls.from_lines(content.splitlines())
-
-    @classmethod
     def from_dict(cls, db: dict[str, Any]) -> Self:
         return cls(
-            db_revision=db.get("db_revision", DB_REVISION),
             date=db.get("date", ""),
             version=db.get("version", ""),
             emojis=list(map(Emoji.from_dict, db.get("emojis", []))),
@@ -166,7 +170,7 @@ class EmojiDatabase:
 
     @classmethod
     def from_lines(cls, lines: Iterable[str]) -> Self:
-        collection = cls(db_revision=DB_REVISION)
+        collection = cls()
         for line in lines:
             if emoji := Emoji.from_line(line):
                 collection.emojis.append(emoji)
@@ -179,8 +183,19 @@ class EmojiDatabase:
                 continue
         return collection
 
+    @classmethod
+    def from_pickle_file(cls, pickle_file: str | Path) -> Self:
+        with open(pickle_file, "rb") as f:
+            return cls.from_dict(pickle.load(f))
+
+    @classmethod
+    def from_string(cls, content: str) -> Self:
+        return cls.from_lines(content.splitlines())
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
-    def to_pickle(self) -> bytes:
-        return pickle.dumps(self.to_dict(), protocol=pickle.HIGHEST_PROTOCOL)
+    def to_pickle_file(self, pickle_file: str | Path) -> None:
+        pickle_file = Path(pickle_file)
+        pickle_file.parent.mkdir(parents=True, exist_ok=True)
+        pickle_file.write_bytes(pickle.dumps(self.to_dict()))

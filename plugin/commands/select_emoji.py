@@ -5,7 +5,6 @@ from functools import cache
 import sublime
 import sublime_plugin
 
-from ..constants import DB_REVISION
 from ..emoji import EmojiDatabase, get_emoji_db
 
 
@@ -31,5 +30,5 @@ class SelectEmojiCommand(sublime_plugin.TextCommand):
             if selected >= 0:
                 self.view.run_command("insert", {"characters": db[selected].char})
 
-        db = get_emoji_db(DB_REVISION)
+        db = get_emoji_db()
         window.show_quick_panel(emoji_db_to_quick_panel_items(db), callback)
