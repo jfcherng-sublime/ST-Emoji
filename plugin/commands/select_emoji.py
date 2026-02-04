@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cache
+from typing import override
 
 import sublime
 import sublime_plugin
@@ -22,6 +23,7 @@ def emoji_db_to_quick_panel_items(db: EmojiDatabase) -> tuple[sublime.QuickPanel
 
 
 class SelectEmojiCommand(sublime_plugin.TextCommand):
+    @override
     def run(self, edit: sublime.Edit) -> None:
         if not (window := self.view.window()):
             return
