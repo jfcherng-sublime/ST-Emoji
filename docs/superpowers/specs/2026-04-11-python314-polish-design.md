@@ -8,6 +8,7 @@
 ## Goal
 
 Polish the codebase to use Python 3.14 language features:
+
 1. Remove the now-redundant `from __future__ import annotations` import (PEP 649)
 2. Add `slots=True` to both dataclasses with correct `ClassVar` annotations
 
@@ -18,6 +19,7 @@ Polish the codebase to use Python 3.14 language features:
 **Why:** Python 3.14 implements PEP 649 (lazy annotation evaluation) as the default. Annotations are no longer eagerly evaluated, so forward references work without stringification. The `from __future__ import annotations` import (PEP 563) is now a no-op.
 
 **Files affected:**
+
 - `boot.py`
 - `plugin/__init__.py`
 - `plugin/constants.py`
@@ -42,6 +44,7 @@ Polish the codebase to use Python 3.14 language features:
 - Annotate `_re_line` as `ClassVar[re.Pattern[str]]`
 
 Before:
+
 ```python
 @dataclass
 class Emoji:
@@ -50,6 +53,7 @@ class Emoji:
 ```
 
 After:
+
 ```python
 @dataclass(slots=True)
 class Emoji:
@@ -63,6 +67,7 @@ class Emoji:
 - Annotate `_RE_VERSION` and `_RE_DATE` as `ClassVar[re.Pattern[str]]`
 
 Before:
+
 ```python
 @dataclass
 class EmojiDatabase:
@@ -72,6 +77,7 @@ class EmojiDatabase:
 ```
 
 After:
+
 ```python
 @dataclass(slots=True)
 class EmojiDatabase:
@@ -83,6 +89,7 @@ class EmojiDatabase:
 **Import addition:** Add `ClassVar` to the `from typing import` line in `plugin/emoji.py`.
 
 **Compatibility notes:**
+
 - `asdict()` serialisation is unaffected — it only reflects instance fields.
 - The post-construction mutation `db.db_hash = db_hash` continues to work: `db_hash` is a declared instance field and is included in `__slots__`.
 - `__hash__` implementations are unaffected.

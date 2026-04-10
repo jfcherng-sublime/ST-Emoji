@@ -1,5 +1,6 @@
 *.dist-info/ export-ignore
 *.pyi export-ignore
+.claude export-ignore
 .dependabot export-ignore
 .editorconfig export-ignore
 .flake8 export-ignore
@@ -10,6 +11,7 @@
 .markdownlint.yaml export-ignore
 .style.yapf export-ignore
 .travis.yml export-ignore
+CLAUDE.md export-ignore
 cliff.toml export-ignore
 codecov.yml export-ignore
 docs/ export-ignore

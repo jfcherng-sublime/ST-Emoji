@@ -12,12 +12,12 @@
 
 ## File Map
 
-| Action | File |
-|--------|------|
-| Modify | `boot.py` |
-| Modify | `plugin/__init__.py` |
-| Modify | `plugin/constants.py` |
-| Modify | `plugin/emoji.py` |
+| Action | File                              |
+| ------ | --------------------------------- |
+| Modify | `boot.py`                         |
+| Modify | `plugin/__init__.py`              |
+| Modify | `plugin/constants.py`             |
+| Modify | `plugin/emoji.py`                 |
 | Modify | `plugin/commands/select_emoji.py` |
 
 ---
@@ -25,6 +25,7 @@
 ### Task 1: Remove `from __future__ import annotations`
 
 **Files:**
+
 - Modify: `boot.py`
 - Modify: `plugin/__init__.py`
 - Modify: `plugin/constants.py`
@@ -148,15 +149,19 @@ git commit -m "refactor: remove redundant __future__ annotations import (PEP 649
 ### Task 2: Add `ClassVar` annotations and `slots=True` to dataclasses
 
 **Files:**
+
 - Modify: `plugin/emoji.py`
 
 - [ ] **Step 1: Update the `typing` import**
 
 Change:
+
 ```python
 from typing import Any, Self
 ```
+
 To:
+
 ```python
 from typing import Any, ClassVar, Self
 ```
@@ -164,6 +169,7 @@ from typing import Any, ClassVar, Self
 - [ ] **Step 2: Add `slots=True` and annotate `_re_line` on `Emoji`**
 
 Change:
+
 ```python
 @dataclass
 class Emoji:
@@ -175,7 +181,9 @@ class Emoji:
 
     _re_line = re.compile(
 ```
+
 To:
+
 ```python
 @dataclass(slots=True)
 class Emoji:
@@ -191,6 +199,7 @@ class Emoji:
 - [ ] **Step 3: Add `slots=True` and annotate `_RE_VERSION` / `_RE_DATE` on `EmojiDatabase`**
 
 Change:
+
 ```python
 @dataclass
 class EmojiDatabase:
@@ -205,7 +214,9 @@ class EmojiDatabase:
     _RE_DATE = re.compile(r"^#\s*Date:\s*(?P<date>.*)$")
     """Matches `# Date: 2023-06-05, 21:39:54 GMT`."""
 ```
+
 To:
+
 ```python
 @dataclass(slots=True)
 class EmojiDatabase:
@@ -239,6 +250,7 @@ make ci-check
 ```
 
 Expected output:
+
 ```
 ========== check: mypy ==========
 ...
@@ -254,8 +266,10 @@ If new errors appear, fix them before proceeding.
 - [ ] **Step 2: Confirm ruff passes**
 
 The output after the mypy section should be:
+
 ```
 ========== check: ruff (lint) ==========
 ========== check: ruff (format) ==========
 ```
+
 (no diff output — meaning no lint violations and no formatting issues)
