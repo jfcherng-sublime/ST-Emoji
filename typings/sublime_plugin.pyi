@@ -24,6 +24,7 @@ from typing import (
     TypeVar,
 )
 import importlib.abc
+import importlib.resources.abc
 import io
 import os
 import sublime
@@ -981,7 +982,7 @@ class MultizipImporter(importlib.abc.MetaPathFinder):
         ...
 
 
-class ZipResourceReader(importlib.abc.ResourceReader):
+class ZipResourceReader(importlib.resources.abc.ResourceReader):
     """
     Implements the resource reader interface introduced in Python 3.7
     """
@@ -1094,14 +1095,14 @@ class ZipLoader(importlib.abc.InspectLoader):
         """
         ...
 
-    def get_resource_reader(self, fullname: str) -> None | importlib.abc.ResourceReader:
+    def get_resource_reader(self, fullname: str) -> None | importlib.resources.abc.ResourceReader:
         """
         :param fullname:
             A unicode string of the module name to get the resource reader for
 
         :return:
             None if the module is not a package, otherwise an object that
-            implements the importlib.abc.ResourceReader() interface
+            implements the importlib.resources.abc.ResourceReader() interface
         """
         ...
 
