@@ -62,7 +62,7 @@ class Emoji:
     description: str = ""
     version: str = ""
 
-    _re_line: ClassVar[re.Pattern[str]] = re.compile(
+    _RE_LINE: ClassVar[re.Pattern[str]] = re.compile(
         # 2764 FE0F 200D 1F525 ; fully-qualified # ❤️‍🔥 E13.1 heart on fire
         r"^(?!#)"  # early fail on comments
         + r"(?P<codes>[^;]+)"
@@ -102,7 +102,7 @@ class Emoji:
 
     @classmethod
     def from_line(cls, line: str) -> Self | None:
-        if m := cls._re_line.fullmatch(line):
+        if m := cls._RE_LINE.fullmatch(line):
             return cls(
                 char=m.group("char").strip(),
                 codes=m.group("codes").strip().split(" "),
