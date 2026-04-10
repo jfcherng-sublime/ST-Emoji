@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from functools import cache
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
 import sublime
 
@@ -54,7 +54,7 @@ class EmojiStatus(StrEnum):
     UNKNOWN = "unknown"
 
 
-@dataclass
+@dataclass(slots=True)
 class Emoji:
     char: str
     codes: Sequence[str]
@@ -62,7 +62,7 @@ class Emoji:
     description: str = ""
     version: str = ""
 
-    _re_line = re.compile(
+    _re_line: ClassVar[re.Pattern[str]] = re.compile(
         # 2764 FE0F 200D 1F525 ; fully-qualified # ❤️‍🔥 E13.1 heart on fire
         r"^(?!#)"  # early fail on comments
         + r"(?P<codes>[^;]+)"
@@ -122,7 +122,7 @@ class Emoji:
         return [f"{ord(c):X}" for c in s]
 
 
-@dataclass
+@dataclass(slots=True)
 class EmojiDatabase:
     db_hash: str = ""
 
@@ -130,9 +130,9 @@ class EmojiDatabase:
     version: str = ""
     emojis: list[Emoji] = field(default_factory=list)
 
-    _RE_VERSION = re.compile(r"^#\s*Version:\s*(?P<version>.*)$")
+    _RE_VERSION: ClassVar[re.Pattern[str]] = re.compile(r"^#\s*Version:\s*(?P<version>.*)$")
     """Matches `# Version: 15.1`."""
-    _RE_DATE = re.compile(r"^#\s*Date:\s*(?P<date>.*)$")
+    _RE_DATE: ClassVar[re.Pattern[str]] = re.compile(r"^#\s*Date:\s*(?P<date>.*)$")
     """Matches `# Date: 2023-06-05, 21:39:54 GMT`."""
 
     def __getitem__(self, index: int) -> Emoji:
