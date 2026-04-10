@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 from typing import Literal
 
 from .constants import PACKAGE_NAME
 
+type LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR"]
 
-def _pp(level: Literal["DEBUG", "INFO", "WARNING", "ERROR"], msg: str) -> None:
+
+def _pp(level: LogLevel, msg: str) -> None:
     """Print plugin message."""
     print(f"[{PACKAGE_NAME}][{level}] {msg}")
 

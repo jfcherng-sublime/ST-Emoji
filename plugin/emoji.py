@@ -12,6 +12,8 @@ import sublime
 from .constants import DB_CACHE_DIR, DB_FILE_IN_PACKAGE, DB_FILE_MD5_IN_PACKAGE, DB_GENERATOR_HASH
 from .utils import pp_error, pp_info
 
+type StrPath = str | Path
+
 
 @cache
 def get_emoji_db() -> EmojiDatabase:
@@ -182,7 +184,7 @@ class EmojiDatabase:
         return collection
 
     @classmethod
-    def from_pickle_file(cls, pickle_file: str | Path) -> Self:
+    def from_pickle_file(cls, pickle_file: StrPath) -> Self:
         with open(pickle_file, "rb") as f:
             return cls.from_dict(pickle.load(f))
 
@@ -193,7 +195,7 @@ class EmojiDatabase:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
-    def to_pickle_file(self, pickle_file: str | Path) -> None:
+    def to_pickle_file(self, pickle_file: StrPath) -> None:
         pickle_file = Path(pickle_file)
         pickle_file.parent.mkdir(parents=True, exist_ok=True)
         pickle_file.write_bytes(pickle.dumps(self.to_dict()))
