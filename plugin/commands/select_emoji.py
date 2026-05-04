@@ -4,7 +4,8 @@ from typing import override
 import sublime
 import sublime_plugin
 
-from ..emoji import EmojiDatabase, get_emoji_db
+from ..emoji import EmojiDatabase
+from ..emoji import get_emoji_db
 
 
 @cache

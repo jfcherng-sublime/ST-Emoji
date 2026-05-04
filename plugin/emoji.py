@@ -1,16 +1,26 @@
 import pickle
 import re
-from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import asdict, dataclass, field
+from collections.abc import Iterable
+from collections.abc import Iterator
+from collections.abc import Sequence
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 from enum import StrEnum
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar, Self
+from typing import Any
+from typing import ClassVar
+from typing import Self
 
 import sublime
 
-from .constants import DB_CACHE_DIR, DB_FILE_IN_PACKAGE, DB_FILE_MD5_IN_PACKAGE, DB_GENERATOR_HASH
-from .utils import pp_error, pp_info
+from .constants import DB_CACHE_DIR
+from .constants import DB_FILE_IN_PACKAGE
+from .constants import DB_FILE_MD5_IN_PACKAGE
+from .constants import DB_GENERATOR_HASH
+from .utils import pp_error
+from .utils import pp_info
 
 type StrPath = str | Path
 
